@@ -20,6 +20,7 @@ type Review = {
   assessment_passed: boolean; assessment_score: number | null; private_notes: string;
 };
 type ApplicantResponse = { id: string; application_id: string; response: string; created_at: string };
+type ApplicationQueryError = { code?: string };
 const statusLabel: Record<string, string> = {
   submitted: "Submitted", reviewing: "Initial review", verification: "Verification",
   assessment: "Assessment", interview_scheduled: "Interview scheduled",
@@ -39,6 +40,19 @@ function appointmentLabel(value: string, timeZone: string) {
   } catch {
     return new Intl.DateTimeFormat("en-GB", { dateStyle: "full", timeStyle: "short", timeZone: "Africa/Kampala" }).format(new Date(value));
   }
+}
+
+function applicationLoadMessage(error: ApplicationQueryError) {
+  if (error.code === "42P01" || error.code === "PGRST205") {
+    return "The trader application table is missing from this Supabase project. Apply the trader account migrations in order, then reload this page.";
+  }
+  if (error.code === "42703" || error.code === "PGRST204") {
+    return "The trader application table is missing required workflow fields. Apply all trader interview and verification migrations, then reload.";
+  }
+  if (error.code === "42501") {
+    return "Supabase denied access to the application queue. Apply the latest trader application access migration, then sign out and back in.";
+  }
+  return "The application queue could not be loaded from Supabase. Check that this app and the migrations use the same Supabase project, then refresh.";
 }
 
 export default async function AdminPage({ searchParams }: {
@@ -81,7 +95,7 @@ export default async function AdminPage({ searchParams }: {
     {interviewScheduled && <p className="trader-application-success" role="status">Zoom appointment saved. The applicant can see it in their private application page.</p>}
     {reviewFailed && <p className="trader-application-alert" role="alert">The review could not be saved. Confirm the application is open and approval requirements are complete.</p>}
     {query.error === "interview" && <p className="trader-application-alert" role="alert">The interview could not be scheduled. Enter a future East Africa Time appointment and a valid Zoom meeting link.</p>}
-    {error ? <section className="admin-review-card"><h2>Application table unavailable</h2><p>Apply the ordered trader role, review, interview status and verified trader workflow migrations in Supabase, then reload this page.</p></section> : applications.length === 0 ? <section className="admin-review-card admin-empty"><h2>No applications yet.</h2><p>New trader applications will appear here for review.</p></section> : <div className="admin-application-list">{applications.map((application) => {
+    {error ? <section className="admin-review-card"><h2>Application queue unavailable</h2><p>{applicationLoadMessage(error)}</p><Link href="/admin">Refresh queue</Link></section> : applications.length === 0 ? <section className="admin-review-card admin-empty"><h2>No applications found.</h2><p>Submitted trader applications will appear here. If an applicant saw a success message, confirm they submitted on this production site and refresh the queue.</p><Link href="/admin">Refresh queue</Link></section> : <div className="admin-application-list">{applications.map((application) => {
       const review = reviewByApplication.get(application.id);
       const closed = ["approved", "declined"].includes(application.status);
       return <article className="admin-review-card" key={application.id}>

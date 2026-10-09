@@ -81,6 +81,7 @@ export async function submitTraderApplication(formData: FormData) {
 
   revalidatePath("/profile");
   revalidatePath("/profile/trader-application");
+  revalidatePath("/admin");
   redirect("/profile/trader-application?submitted=1");
 }
 

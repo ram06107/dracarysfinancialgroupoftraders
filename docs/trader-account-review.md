@@ -27,8 +27,10 @@ Apply migrations in order after the existing platform migrations:
 3. `20261008000300_trader_interview_statuses.sql`
 4. `20261008000400_verified_trader_workflow.sql`
 5. `20261008000500_founder_verified_trader.sql`
+6. `20261009000100_personal_journal_images.sql` (if not already applied)
+7. `20261009000200_trader_application_admin_queue.sql`
 
-The verified trader workflow migration grants `super_admin` to the requested email if it already has a row in `public.members`. If that account has not registered yet, create it through Supabase Auth first, then run `supabase/manual/initial_super_admin.sql` in the Supabase SQL editor. The script grants the admin role only; Supabase Auth must create the account and manage its password.
+The verified trader workflow migration grants `super_admin` to the requested email if it already has a row in `public.members`. The final queue migration repairs that grant if the earlier migration ran before the founder account existed and restores administrator SELECT access to the private application queue. If the account has not registered yet, create it through Supabase Auth first, then run `supabase/manual/initial_super_admin.sql` in the Supabase SQL editor. The script grants the admin role only; Supabase Auth must create the account and manage its password.
 
 The admin panel is `/admin`. Server actions and Postgres functions both check the administrator role. Feed insert/update policies allow only founding traders, approved financial traders and administrators. Community chat remains available to all signed-in members, and comment permissions remain open to public members.
 
@@ -41,4 +43,3 @@ trader application; the application page recognizes the founding role and shows
 the verified account state. This exception applies only to that account. All
 other trader applications keep the verification, Zoom interview and assessment
 requirements.
-
