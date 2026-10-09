@@ -2385,6 +2385,10 @@ body:has(.community-page) main { width: 100%; max-width: none; min-height: 100dv
 .admin-review-checks > label:last-child input { width: 100%; }
 .admin-review-rule { margin: 0; color: #5b6870; font-size: 12px; line-height: 1.65; }
 .admin-review-form > button { justify-self: start; min-height: 40px; }
+.admin-decision-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding-top: 13px; border-top: 1px solid #e3e7e9; }
+.admin-decision-actions > span { flex-basis: 100%; color: #596873; font: 10px var(--mono); letter-spacing: .07em; }
+.admin-decision-actions .button { min-height: 40px; }
+.admin-decision-actions .admin-reject-button { color: #8e4639; border-color: #d7b5ac; }
 .admin-empty { padding: 40px; text-align: center; }
 .admin-empty p { margin: 0; color: #596771; }
 

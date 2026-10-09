@@ -160,7 +160,8 @@ export async function reviewTraderApplication(formData: FormData) {
   if (adminError || isAdmin !== true) redirect("/admin?error=forbidden");
 
   const applicationId = text(formData, "application_id");
-  const status = text(formData, "status");
+  const decision = text(formData, "decision");
+  const status = decision || text(formData, "status");
   const allowedStatuses = new Set(["reviewing", "verification", "assessment", "interview_scheduled", "interview_completed", "needs_information", "approved", "declined"]);
   const scoreText = text(formData, "assessment_score");
   const score = scoreText ? Number(scoreText) : null;
@@ -183,7 +184,7 @@ export async function reviewTraderApplication(formData: FormData) {
     p_private_notes: privateNotes,
   });
 
-  if (error) redirect("/admin?error=review");
+  if (error) redirect(status === "approved" ? "/admin?error=approval" : "/admin?error=review");
   revalidatePath("/admin");
   revalidatePath("/traders");
   revalidatePath("/profile");
