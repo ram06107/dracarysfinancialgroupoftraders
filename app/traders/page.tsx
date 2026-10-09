@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { createDemoPerformanceEvents, demoTraderIds, summarizePerformance } from "@/lib/performance";
 import { createClient } from "@/lib/supabase/server";
@@ -6,11 +7,11 @@ import { hasSupabaseConfig } from "@/lib/supabase/config";
 
 export const metadata: Metadata = { title: "The Traders" };
 
-type Trader = { trader_profile_id: string; member_id: string; slug: string; public_name: string; trading_style: string; experience_summary: string; markets: string[]; setups: number; taken: number; wins: number; losses: number; open: number };
+type Trader = { trader_profile_id: string; member_id: string; slug: string; public_name: string; trading_style: string; experience_summary: string; markets: string[]; setups: number; taken: number; wins: number; losses: number; open: number; avatar_url?: string; has_profile_photo?: boolean };
 
 function TraderCard({ trader, href }: { trader: Trader; href?: string }) {
   const content = <>
-    <div className="trader-performance-card-head"><span className="trader-profile-mark">{trader.public_name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase()}</span><div><span className="trader-profile-label">PUBLIC TRADER RECORD</span><h2>{trader.public_name}</h2></div></div>
+    <div className="trader-performance-card-head"><span className="trader-profile-mark" role="img" aria-label={`${trader.public_name} profile image`}><Image src={trader.avatar_url ?? "/dracarys-mark.png"} alt="" width={76} height={76} unoptimized className={trader.has_profile_photo ? "" : "trader-profile-mark-brand"} /></span><div><span className="trader-profile-label">PUBLIC TRADER RECORD</span><h2>{trader.public_name}</h2></div></div>
     <p className="trader-performance-style">{trader.trading_style || "No trading approach has been added yet."}</p>
     {trader.markets.length > 0 && <div className="trader-market-list">{trader.markets.map((market) => <span key={market}>{market}</span>)}</div>}
     <div className="trader-performance-stats"><div><strong>{trader.setups}</strong><span>SETUPS</span></div><div><strong>{trader.taken}</strong><span>TAKEN</span></div><div><strong>{trader.wins}</strong><span>WINS</span></div><div><strong>{trader.losses}</strong><span>LOSSES</span></div><div><strong>{trader.open}</strong><span>OPEN</span></div></div>
@@ -43,6 +44,23 @@ export default async function TradersPage() {
     const { data, error } = await supabase.from("public_trader_performance").select("trader_profile_id, member_id, slug, public_name, trading_style, experience_summary, markets, setups, taken, wins, losses, open").order("public_name", { ascending: true });
     failed = Boolean(error);
     traders = (data ?? []) as Trader[];
+    if (traders.length > 0) {
+      const memberIds = [...new Set(traders.map((trader) => trader.member_id).filter(Boolean))];
+      const { data: profiles } = memberIds.length
+        ? await supabase.from("public_member_profiles").select("id, avatar_key").in("id", memberIds)
+        : { data: [] };
+      const avatarByMember = new Map((profiles ?? []).map((profile) => {
+        const key = profile.avatar_key;
+        const hasPhoto = Boolean(key && !["monogram", "dragon"].includes(key));
+        const url = key === "dragon"
+          ? "/dracarys-mark.png"
+          : hasPhoto
+            ? supabase.storage.from("profile-avatars").getPublicUrl(key as string).data.publicUrl
+            : "/dracarys-mark.png";
+        return [profile.id, { avatar_url: url, has_profile_photo: hasPhoto }];
+      }));
+      traders = traders.map((trader) => ({ ...trader, ...avatarByMember.get(trader.member_id) }));
+    }
   } else {
     traders = demoTraders();
   }

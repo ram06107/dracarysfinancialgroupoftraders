@@ -1293,6 +1293,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .trader-card-link { display: block; color: inherit; }
 .trader-performance-card-head { display: flex; align-items: center; gap: 10px; padding: 14px 15px 10px; }
 .trader-profile-mark { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border: 1px solid #d8d4ca; border-radius: 50%; background: #f1eee6; color: #8a523e; font: 9px var(--mono); }
+.trader-profile-mark img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.trader-profile-mark img.trader-profile-mark-brand { padding: 5px; object-fit: contain; }
 .trader-performance-card-head > div { min-width: 0; }
 .trader-profile-label { color: #959990; font: 6px var(--mono); letter-spacing: .08em; }
 .trader-performance-card h2 { overflow: hidden; margin: 4px 0 0; color: #30352f; font: 600 17px var(--display); letter-spacing: -.04em; text-overflow: ellipsis; }
