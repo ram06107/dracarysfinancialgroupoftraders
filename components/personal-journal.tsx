@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { createJournalEntry, deleteJournalEntry, updateJournalEntry } from "@/app/actions/journal";
 import { demoJournal } from "@/lib/demo-data";
 import type { PersonalJournalEntry } from "@/lib/personal-journal";
@@ -37,6 +38,7 @@ function fieldsFrom(form: HTMLFormElement, id: string) {
     risk_notes: String(data.get("risk_notes") ?? "").trim(),
     result_notes: String(data.get("result_notes") ?? "").trim(),
     psychology_notes: String(data.get("psychology_notes") ?? "").trim(),
+    image_url: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   } satisfies PersonalJournalEntry;
@@ -49,12 +51,15 @@ function JournalFields({ entry, demoMode, onDemoSubmit, editing = false }: {
   editing?: boolean;
 }) {
   const action = demoMode ? undefined : editing ? updateJournalEntry : createJournalEntry;
-  return <form className="journal-entry-form" action={action} onSubmit={demoMode && onDemoSubmit ? (event) => onDemoSubmit(event, entry?.id) : undefined}>
+  return <form className="journal-entry-form" action={action} encType="multipart/form-data" onSubmit={demoMode && onDemoSubmit ? (event) => onDemoSubmit(event, entry?.id) : undefined}>
     {editing && <input type="hidden" name="entry_id" value={entry?.id ?? ""} />}
+    {editing && entry?.image_url && <div className="journal-current-image"><Image src={entry.image_url} alt={`Attached image for ${entry.title}`} width={1200} height={900} unoptimized /></div>}
     <div className="journal-form-row"><label>Entry title<input name="title" required minLength={2} maxLength={140} defaultValue={entry?.title ?? ""} placeholder="A note you can find later" /></label><label>Market<input name="market" maxLength={24} defaultValue={entry?.market ?? ""} placeholder="EURUSD, XAUUSD…" /></label><label>Date<input name="entry_date" type="date" required defaultValue={entry?.entry_date ?? new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Kampala" }).format(new Date())} /></label></div>
     <label>What did you see?<textarea name="analysis" maxLength={12000} defaultValue={entry?.analysis ?? ""} placeholder="The context, levels and reasoning behind the idea…" /></label>
     <div className="journal-form-row journal-form-notes"><label>Risk and invalidation<textarea name="risk_notes" maxLength={4000} defaultValue={entry?.risk_notes ?? ""} placeholder="What would prove the idea wrong?" /></label><label>Result and review<textarea name="result_notes" maxLength={4000} defaultValue={entry?.result_notes ?? ""} placeholder="What happened, and what will you carry forward?" /></label></div>
     <label>State of mind<textarea name="psychology_notes" maxLength={4000} defaultValue={entry?.psychology_notes ?? ""} placeholder="How were you thinking before and after the decision?" /></label>
+    {demoMode ? <p className="journal-image-help">Sign in to save private journal images to your account.</p> : <label className="journal-image-field">Attach an image<input name="image" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /><small>PNG, JPG, WEBP or GIF · up to 8 MB · private to your account</small></label>}
+    {editing && entry?.image_url && !demoMode && <label className="journal-remove-image"><input name="remove_image" type="checkbox" value="true" /> Remove the saved image</label>}
     <div className="journal-form-actions"><span>{demoMode ? "Saved only in this browser." : "Private to your account."}</span><button className="button button-dark button-small" type="submit">{editing ? "Save changes" : "Save entry"}</button></div>
   </form>;
 }
@@ -121,16 +126,16 @@ export function PersonalJournalPanel({ entries, error = false, status = "", demo
 
   const shownEntries = demoMode ? demoEntries : entries;
   return <section id="personal-journal" className="personal-journal" aria-labelledby="personal-journal-title">
-    <header className="journal-heading"><div><p className="eyebrow eyebrow-dark">PRIVATE WORKSPACE</p><h2 id="personal-journal-title">Personal journal</h2><p>Keep the reasoning, risk and review beside your own trading decisions.</p></div><span>{demoMode ? "LOCAL PREVIEW" : "PRIVATE TO YOU"}</span></header>
+    <header className="journal-heading"><div><p className="eyebrow eyebrow-dark">PRIVATE WORKSPACE</p><h2 id="personal-journal-title">Personal journal</h2><p>Keep your notes, chart images, risk and review beside each trading decision.</p></div><span>{demoMode ? "LOCAL PREVIEW" : "PRIVATE TO YOU"}</span></header>
     {status && <p className="journal-status" role="status">{status}</p>}
-    {error && <p className="journal-status journal-status-error" role="status">Private journal storage is not ready. Apply the profile journal migration in Supabase, then reload this page.</p>}
+    {error && <p className="journal-status journal-status-error" role="status">Private journal storage is not ready. Apply the profile journal and journal image migrations in Supabase, then reload this page.</p>}
     {notice && <p className="journal-status" role="status">{notice}</p>}
     {demoMode && !ready && <p className="journal-status">Opening sample entries…</p>}
     {canEdit && <details className="journal-new-entry"><summary>Write a journal entry</summary>{editor()}</details>}
-    {shownEntries.length === 0 && !error ? <div className="journal-empty"><strong>No journal entries yet.</strong><span>Start with the reasoning and the risk you accepted. Add the result when the idea is complete.</span></div> : <div className="journal-entry-list">{shownEntries.map((entry) => <details className="journal-entry" key={entry.id}>
-      <summary><span className="journal-entry-date">{day(entry.entry_date)}</span><span className="journal-entry-summary"><strong>{entry.title}</strong><small>{entry.market || "General review"}</small></span><span className="journal-open-label">Read {canEdit ? "and edit" : "entry"}</span></summary>
-      <div className="journal-entry-content">{canEdit ? <>{editor(entry)}<form className="journal-delete-form" action={demoMode ? undefined : deleteJournalEntry} onSubmit={demoMode ? (event) => removeDemo(event, entry.id) : undefined}><input type="hidden" name="entry_id" value={entry.id} /><button className="journal-delete-button" type="submit">Remove entry</button></form></> : <div className="journal-readonly-notes">{entry.analysis && <section><h3>What did you see?</h3><p>{entry.analysis}</p></section>}{entry.risk_notes && <section><h3>Risk and invalidation</h3><p>{entry.risk_notes}</p></section>}{entry.result_notes && <section><h3>Result and review</h3><p>{entry.result_notes}</p></section>}{entry.psychology_notes && <section><h3>State of mind</h3><p>{entry.psychology_notes}</p></section>}</div>}</div>
+    {shownEntries.length === 0 && !error ? <div className="journal-empty"><strong>No journal entries yet.</strong><span>Start with written notes, a chart image, or both. Add the result when the idea is complete.</span></div> : <div className="journal-entry-list">{shownEntries.map((entry) => <details className="journal-entry" key={entry.id}>
+      <summary><span className="journal-entry-date">{day(entry.entry_date)}</span><span className="journal-entry-summary"><strong>{entry.title}</strong><small>{entry.market || (entry.image_url ? "Image entry" : "General review")}</small></span><span className="journal-open-label">Read {canEdit ? "and edit" : "entry"}</span></summary>
+      <div className="journal-entry-content">{canEdit ? <>{editor(entry)}<form className="journal-delete-form" action={demoMode ? undefined : deleteJournalEntry} onSubmit={demoMode ? (event) => removeDemo(event, entry.id) : undefined}><input type="hidden" name="entry_id" value={entry.id} /><button className="journal-delete-button" type="submit">Remove entry</button></form></> : <>{entry.image_url && <div className="journal-entry-image"><Image src={entry.image_url} alt={`Journal image for ${entry.title}`} width={1200} height={900} unoptimized /></div>}<div className="journal-readonly-notes">{entry.analysis && <section><h3>What did you see?</h3><p>{entry.analysis}</p></section>}{entry.risk_notes && <section><h3>Risk and invalidation</h3><p>{entry.risk_notes}</p></section>}{entry.result_notes && <section><h3>Result and review</h3><p>{entry.result_notes}</p></section>}{entry.psychology_notes && <section><h3>State of mind</h3><p>{entry.psychology_notes}</p></section>}</div></>}</div>
     </details>)}</div>}
-    <p className="journal-privacy-note">Journal entries are private to your account. Sample notes in the demo stay in this browser.</p>
+    <p className="journal-privacy-note">Journal entries and attached images are private to your account. Sample notes in the demo stay in this browser.</p>
   </section>;
 }

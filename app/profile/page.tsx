@@ -19,7 +19,7 @@ const statusMessages: Record<string, string> = {
 export default async function ProfilePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams;
   const queryStatus = typeof query.saved === "string" ? "Your profile has been saved." : typeof query.error === "string" ? statusMessages[query.error] ?? "! Something went wrong while saving." : "";
-  const journalStatus = typeof query.journal === "string" ? ({ saved: "Journal entry saved.", deleted: "Journal entry removed.", invalid: "Check the entry title, date and notes, then save again.", error: "The journal could not be saved. Check that its migration has been applied.", setup: "The journal is available after Supabase is connected." } as Record<string, string>)[query.journal] ?? "" : "";
+  const journalStatus = typeof query.journal === "string" ? ({ saved: "Journal entry saved.", deleted: "Journal entry removed.", invalid: "Check the title and date, then add a note or attach an image.", image: "Choose a PNG, JPG, WEBP or GIF image up to 8 MB.", error: "The journal could not be saved. Check that its migrations have been applied.", setup: "The journal is available after Supabase is connected." } as Record<string, string>)[query.journal] ?? "" : "";
 
   if (hasSupabaseConfig()) {
     const supabase = await createClient();

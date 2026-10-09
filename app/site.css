@@ -1966,6 +1966,12 @@ body:has(.community-page) main { width: 100%; max-width: none; min-height: 100dv
 .journal-form-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid #e6eaed; }
 .journal-form-actions > span { color: #687680; font-size: 12px; }
 .journal-form-actions .button { min-height: 38px; font-size: 13px; }
+.journal-image-field input[type="file"] { min-height: 0; padding: 8px; background: #f8fafb; }
+.journal-image-field small, .journal-image-help { margin: 0; color: #687680; font-size: 11px; font-weight: 400; line-height: 1.5; }
+.journal-remove-image { display: flex !important; align-items: center; gap: 8px !important; }
+.journal-remove-image input { width: 16px; min-height: 16px; margin: 0; accent-color: #9e4c36; }
+.journal-current-image, .journal-entry-image { overflow: hidden; margin: 2px 0 4px; border: 1px solid #dce2e6; background: #f4f6f7; }
+.journal-current-image img, .journal-entry-image img { display: block; width: 100%; max-height: 520px; object-fit: contain; }
 .journal-entry-list { display: grid; gap: 8px; margin-top: 12px; }
 .journal-entry { border: 1px solid #dce2e6; background: #fff; }
 .journal-entry > summary { display: grid; grid-template-columns: 105px minmax(0,1fr) auto; align-items: center; gap: 12px; min-height: 64px; padding: 10px 13px; cursor: pointer; list-style: none; }
