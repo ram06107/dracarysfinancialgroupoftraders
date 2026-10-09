@@ -1291,15 +1291,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .trader-performance-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
 .trader-performance-card { min-width: 0; border: 1px solid #dedbd2; background: #fbfaf7; }
 .trader-card-link { display: block; color: inherit; }
-.trader-performance-card-head { display: flex; align-items: center; gap: 10px; padding: 14px 15px 10px; }
-.trader-profile-mark { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border: 1px solid #d8d4ca; border-radius: 50%; background: #f1eee6; color: #8a523e; font: 9px var(--mono); }
-.trader-profile-mark img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
-.trader-profile-mark img.trader-profile-mark-brand { padding: 5px; object-fit: contain; }
+.trader-performance-card-head { display: grid; grid-template-columns: 38px minmax(0,1fr); align-items: center; gap: 10px; padding: 14px 15px 10px; }
+.trader-profile-mark { position: relative; display: block; width: 38px; height: 38px; overflow: hidden; border: 1px solid #d8d4ca; border-radius: 50%; background: #f1eee6; color: #8a523e; font: 9px var(--mono); }
+.trader-profile-mark img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.trader-profile-mark img.trader-profile-mark-brand { box-sizing: border-box; padding: 5px; object-fit: contain; }
 .trader-performance-card-head > div { min-width: 0; }
 .trader-profile-label { color: #959990; font: 6px var(--mono); letter-spacing: .08em; }
 .trader-performance-card h2 { overflow: hidden; margin: 4px 0 0; color: #30352f; font: 600 17px var(--display); letter-spacing: -.04em; text-overflow: ellipsis; }
 .trader-profile-arrow { margin-left: auto; color: #9c644c; font-size: 12px; }
-.trader-performance-style { min-height: 32px; margin: 0 15px 8px; color: #72776f; font-size: 8px; line-height: 1.55; }
+.trader-performance-style { min-height: 32px; margin: 0 15px 8px; padding-top: 3px; color: #555d55; font-size: 11px; line-height: 1.55; }
 .trader-market-list { display: flex; gap: 4px; margin: 0 15px 9px; }
 .trader-market-list span { padding: 4px 6px; border: 1px solid #e5e1d9; color: #848980; font: 6px var(--mono); }
 .trader-performance-stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); border-top: 1px solid #e8e5de; }
@@ -2269,7 +2269,7 @@ body:has(.community-page) main { width: 100%; max-width: none; min-height: 100dv
   .social-feed-layout, .market-feed-layout { grid-template-columns: minmax(0,1fr); gap: 15px; }
   .market-feed-aside { position: static; }
   .profile-layout { grid-template-columns: minmax(0,1fr); }
-  .profile-page-head, .performance-panel-head, .trader-performance-card-head {
+  .profile-page-head, .performance-panel-head {
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
