@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { SiteHeader } from "@/components/site-header";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 import "./site.css";
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <div className="footer-links"><a href="/about">About</a><a href="/traders">Traders</a><a href="/record">Record</a><a href="/community">Community</a></div>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
