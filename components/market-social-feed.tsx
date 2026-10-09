@@ -125,6 +125,11 @@ function DemoSocialFeed({ name, readOnly, profileStorageKey }: { name: string; r
     if (persist(posts.map((post) => post.id === postId ? { ...post, replies: [...post.replies, reply] } : post), "Comment added in this browser.")) setCommentDrafts({ ...commentDrafts, [postId]: "" });
   }
 
+  function deleteDemoPost(postId: string) {
+    if (readOnly || !window.confirm("Remove this post from the feed?")) return;
+    persist(posts.filter((post) => post.id !== postId), "Your post was removed from this browser’s sample feed.");
+  }
+
   return <div className="social-feed-layout">
     <main className="social-feed-column">
       <form className="social-compose" onSubmit={publish}>
@@ -144,7 +149,7 @@ function DemoSocialFeed({ name, readOnly, profileStorageKey }: { name: string; r
         {post.chartVariant && <DemoChartImage variant={post.chartVariant} caption={`${post.market} · FICTIONAL EXAMPLE`} />}
         {post.attachment && <div className="social-attachment">{post.attachment.mime.startsWith("image/") && <Image src={post.attachment.dataUrl} alt={post.attachment.name} width={1200} height={900} unoptimized />}{post.attachment.mime.startsWith("image/") ? null : <a href={post.attachment.dataUrl} download={post.attachment.name}>{post.attachment.name} · {Math.ceil(post.attachment.size / 1024)} KB <span>Download</span></a>}</div>}
         {post.note && <p className="social-post-note">{post.note}</p>}
-        <div className="social-post-actions"><button type="button" className={post.liked ? "social-liked" : ""} disabled={readOnly} onClick={() => toggleLike(post.id)}><span aria-hidden="true">♡</span> Like <b>{post.likes}</b></button><button type="button" aria-label={`${post.replies.length} comments`}><span aria-hidden="true">◯</span> Comment <b>{post.replies.length}</b></button><span className="social-demo-tag">SAMPLE POST</span></div>
+        <div className="social-post-actions"><button type="button" className={post.liked ? "social-liked" : ""} disabled={readOnly} onClick={() => toggleLike(post.id)}><span aria-hidden="true">♡</span> Like <b>{post.likes}</b></button><button type="button" aria-label={`${post.replies.length} comments`}><span aria-hidden="true">◯</span> Comment <b>{post.replies.length}</b></button>{post.mine && !readOnly && <button type="button" className="social-demo-delete" onClick={() => deleteDemoPost(post.id)}>Delete post</button>}<span className="social-demo-tag">SAMPLE POST</span></div>
         {post.replies.length > 0 && <div className="social-comments">{post.replies.map((reply) => <div className="social-comment" key={reply.id}><MemberAvatar name={reply.author} src={reply.author === name ? profileAvatar : undefined} className="social-avatar social-avatar-small" /><div><strong>{reply.author === name ? profileName : reply.author}</strong><p>{reply.body}</p><time>{formatStamp(reply.createdAt)} EAT</time></div></div>)}</div>}
         {!readOnly && <form className="social-comment-form" onSubmit={(event) => addComment(event, post.id)}><label className="sr-only" htmlFor={`social-comment-${post.id}`}>Write a comment</label><input id={`social-comment-${post.id}`} value={commentDrafts[post.id] ?? ""} onChange={(event) => setCommentDrafts({ ...commentDrafts, [post.id]: event.target.value })} placeholder="Write a comment…" maxLength={1000} /><button type="submit" aria-label="Send comment">Send</button></form>}
         <button className="social-post-close" type="button" onClick={() => setExpandedPostIds((current) => current.filter((id) => id !== post.id))}>Close post</button>
@@ -156,12 +161,12 @@ function DemoSocialFeed({ name, readOnly, profileStorageKey }: { name: string; r
   </div>;
 }
 
-export function MarketSocialFeed({ connected, posts, signedIn, canPublish = false, name, avatarUrl, demoMember = false, readOnlyDemo = false, demoProfileStorageKey }: { connected: boolean; posts: CommunityPost[]; signedIn: boolean; canPublish?: boolean; name: string; avatarUrl?: string | null; demoMember?: boolean; readOnlyDemo?: boolean; demoProfileStorageKey?: string }) {
+export function MarketSocialFeed({ connected, posts, signedIn, canPublish = false, name, avatarUrl, memberId, demoMember = false, readOnlyDemo = false, demoProfileStorageKey }: { connected: boolean; posts: CommunityPost[]; signedIn: boolean; canPublish?: boolean; name: string; avatarUrl?: string | null; memberId?: string | null; demoMember?: boolean; readOnlyDemo?: boolean; demoProfileStorageKey?: string }) {
   if (!connected) return <DemoSocialFeed name={name} readOnly={readOnlyDemo} profileStorageKey={demoProfileStorageKey} />;
   return <div className="social-feed-layout">
     <main className="social-feed-column">
       <SocialPostComposer signedIn={signedIn} canPublish={canPublish} name={name} avatarUrl={avatarUrl} demoMember={demoMember} />
-      {posts.length === 0 ? <div className="social-empty-state"><span className="social-empty-kicker">THE FEED IS OPEN</span><strong>No live posts yet</strong><span>This page collects trader observations, chart notes and longer analysis. Public Members can comment and use the open Community group chat.</span>{canPublish && signedIn && !demoMember ? <a href="#social-live-body">Write the first post <span aria-hidden="true"></span></a> : !signedIn ? <Link href="/sign-up">Join the community <span aria-hidden="true"></span></Link> : <Link href="/profile/trader-application">Apply for trader review <span aria-hidden="true"></span></Link>}</div> : posts.map((post) => <CommunityPostCard key={post.id} post={post} signedIn={signedIn} returnTo="/feed" />)}
+      {posts.length === 0 ? <div className="social-empty-state"><span className="social-empty-kicker">THE FEED IS OPEN</span><strong>No live posts yet</strong><span>This page collects trader observations, chart notes and longer analysis. Public Members can comment and use the open Community group chat.</span>{canPublish && signedIn && !demoMember ? <a href="#social-live-body">Write the first post <span aria-hidden="true"></span></a> : !signedIn ? <Link href="/sign-up">Join the community <span aria-hidden="true"></span></Link> : <Link href="/profile/trader-application">Apply for trader review <span aria-hidden="true"></span></Link>}</div> : posts.map((post) => <CommunityPostCard key={post.id} post={post} signedIn={signedIn} memberId={memberId} returnTo="/feed" />)}
     </main>
     <aside className="social-feed-aside"><section className="feed-aside-card"><p className="eyebrow eyebrow-dark">A GOOD POST</p><h2>Show the reasoning<br /><em>with the view.</em></h2><p>Share what you noticed, what changed and what remains uncertain.</p></section><section className="feed-aside-card feed-aside-risk"><span>BEFORE YOU ACT</span><p>Posts are members’ views, not recommendations. Trading carries real risk.</p></section><Link className="feed-record-link" href="/community"><span>For conversations</span><strong>Open the community room </strong></Link></aside>
   </div>;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addComment, publishPost, toggleReaction } from "@/app/actions/community";
+import { addComment, deleteCommunityPost, publishPost, toggleReaction } from "@/app/actions/community";
 import { MemberAvatar } from "@/components/member-avatar";
 import type { CommunityPost } from "@/lib/community/feed";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -89,17 +89,28 @@ export function PostComposer({ signedIn, canPublish = false, name, demoMember = 
   );
 }
 
-export function CommunityPostCard({ post, signedIn, returnTo = "/community" }: { post: CommunityPost; signedIn: boolean; returnTo?: "/community" | "/feed" }) {
+function DeletePostButton({ postId, returnTo }: { postId: string; returnTo: "/community" | "/feed" }) {
+  return <form action={deleteCommunityPost} className="post-delete-form">
+    <input type="hidden" name="post_id" value={postId} />
+    <input type="hidden" name="return_to" value={returnTo} />
+    <button className="post-delete-button" type="submit" onClick={(event) => {
+      if (!window.confirm("Remove this post from the feed?")) event.preventDefault();
+    }}>Delete post</button>
+  </form>;
+}
+
+export function CommunityPostCard({ post, signedIn, memberId, returnTo = "/community" }: { post: CommunityPost; signedIn: boolean; memberId?: string | null; returnTo?: "/community" | "/feed" }) {
   const kindLabel = post.post_kind === "signal" ? "SIGNAL SCENARIO" : post.post_kind === "setup" ? "TRADE SETUP" : post.post_kind === "file" ? "SHARED FILE" : "CHAT";
   const compact = returnTo === "/feed";
   const [expanded, setExpanded] = useState(!compact);
   const preview = post.body.replace(/\s+/g, " ").trim();
+  const ownsPost = signedIn && Boolean(memberId) && post.author_id === memberId;
   return (
     <article className={`post-card ${compact ? "feed-post-card" : ""}`}>
       <div className="post-heading">
         <Initial name={post.author} avatarUrl={post.author_avatar_url} />
         <div className="post-byline"><div className="post-author-name"><Link className="profile-name-link" href={`/members/${post.author_id}`}><strong>{post.author}</strong></Link>{post.is_verified_trader && <VerifiedTraderBadge compact />}</div><span>{stamp(post.created_at)}</span></div>
-        <span className={`post-kind post-kind-${post.post_kind}`}>{kindLabel}</span>
+        <div className="post-heading-tools"><span className={`post-kind post-kind-${post.post_kind}`}>{kindLabel}</span>{ownsPost && <DeletePostButton postId={post.id} returnTo={returnTo} />}</div>
       </div>
       {compact && !expanded ? <div className="feed-post-preview">
         {post.instrument && <span className="feed-post-market">{post.instrument} {post.direction ?? ""}</span>}
@@ -160,7 +171,7 @@ export function CommunityPostCard({ post, signedIn, returnTo = "/community" }: {
   );
 }
 
-export function CommunityFeedList({ posts, signedIn, name, demoMember = false, live = false }: { posts: CommunityPost[]; signedIn: boolean; name: string; demoMember?: boolean; live?: boolean }) {
+export function CommunityFeedList({ posts, signedIn, name, memberId, demoMember = false, live = false }: { posts: CommunityPost[]; signedIn: boolean; name: string; memberId?: string | null; demoMember?: boolean; live?: boolean }) {
   const router = useRouter();
   const [kind, setKind] = useState<"all" | (typeof kinds)[number]["value"]>("all");
   const [composeKind, setComposeKind] = useState<(typeof kinds)[number]["value"]>("chat");
@@ -220,7 +231,7 @@ export function CommunityFeedList({ posts, signedIn, name, demoMember = false, l
     <div className="messenger-conversation">
       <header className="messenger-chat-head"><span className={`messenger-room-icon messenger-icon-${kind}`}>{selected.icon}</span><div><h2>{selected.label}</h2><p>{kind === "all" ? "All room conversations" : "Community discussion and shared ideas"} · {filtered.length} messages</p></div><span className={`messenger-online ${connection === "offline" ? "messenger-offline" : ""}`}><i /> {connection === "live" ? "LIVE" : connection === "offline" ? "RECONNECTING" : "CONNECTING"}</span></header>
       <div className="messenger-timeline messenger-connected-timeline" role="log" aria-label={`${selected.label} messages`}>
-        {filtered.length === 0 ? <div className="messenger-empty"><strong>This room is quiet.</strong><span>The first conversation is waiting to happen.</span></div> : [...filtered].reverse().map((post) => <div className="messenger-message-row" key={post.id}><Initial name={post.author} /><CommunityPostCard post={post} signedIn={signedIn} /></div>)}
+        {filtered.length === 0 ? <div className="messenger-empty"><strong>This room is quiet.</strong><span>The first conversation is waiting to happen.</span></div> : [...filtered].reverse().map((post) => <div className="messenger-message-row" key={post.id}><Initial name={post.author} /><CommunityPostCard post={post} signedIn={signedIn} memberId={memberId} /></div>)}
       </div>
       <PostComposer signedIn={signedIn} name={name} demoMember={demoMember} kind={composeKind} onKindChange={(next) => { setComposeKind(next); setKind(next); }} />
     </div>

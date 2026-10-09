@@ -191,3 +191,38 @@ export async function reviewTraderApplication(formData: FormData) {
   revalidatePath("/profile/trader-application");
   redirect("/admin?reviewed=1");
 }
+
+export async function decideTraderApplication(formData: FormData) {
+  if (!hasSupabaseConfig()) redirect("/admin?error=setup");
+  const supabase = await createClient();
+  const { data: auth, error: authError } = await supabase.auth.getUser();
+  if (authError || !auth.user) redirect("/sign-in");
+
+  const { data: isAdmin, error: adminError } = await supabase.rpc("request_is_admin");
+  if (adminError || isAdmin !== true) redirect("/admin?error=forbidden");
+
+  const applicationId = text(formData, "application_id");
+  const decision = text(formData, "decision");
+  const publicMessage = text(formData, "public_message");
+  const privateNotes = text(formData, "private_notes");
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId) ||
+    !["approved", "declined"].includes(decision) ||
+    publicMessage.length > 1200 || privateNotes.length > 4000
+  ) redirect("/admin?error=details");
+
+  const { error } = await supabase.rpc("admin_decide_trader_application", {
+    p_application_id: applicationId,
+    p_decision: decision,
+    p_public_message: publicMessage,
+    p_private_notes: privateNotes,
+  });
+  if (error) redirect("/admin?error=decision");
+
+  revalidatePath("/admin");
+  revalidatePath("/feed");
+  revalidatePath("/traders");
+  revalidatePath("/profile");
+  revalidatePath("/profile/trader-application");
+  redirect("/admin?decided=1");
+}

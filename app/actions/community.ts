@@ -144,3 +144,25 @@ export async function toggleReaction(formData: FormData) {
   revalidatePath("/community");
   redirect(destination);
 }
+
+export async function deleteCommunityPost(formData: FormData) {
+  const destination = returnPath(formData);
+  const postId = textField(formData, "post_id");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId)) {
+    redirect(`${destination}?error=delete`);
+  }
+
+  const { supabase } = await signedInClient();
+  const { data: attachmentKey, error } = await supabase.rpc("remove_community_post", { p_post_id: postId });
+  if (error) redirect(`${destination}?error=delete`);
+
+  revalidatePath("/feed");
+  revalidatePath("/community");
+
+  if (typeof attachmentKey === "string" && attachmentKey) {
+    const { error: attachmentError } = await supabase.storage.from("community-files").remove([attachmentKey]);
+    if (attachmentError) redirect(`${destination}?error=delete_attachment`);
+  }
+
+  redirect(`${destination}?deleted=1`);
+}

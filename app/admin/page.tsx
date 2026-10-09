@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { reviewTraderApplication, scheduleTraderInterview } from "@/app/actions/trader-application";
+import { decideTraderApplication, reviewTraderApplication, scheduleTraderInterview } from "@/app/actions/trader-application";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
@@ -25,7 +25,7 @@ const statusLabel: Record<string, string> = {
   submitted: "Submitted", reviewing: "Initial review", verification: "Verification",
   assessment: "Assessment", interview_scheduled: "Interview scheduled",
   interview_completed: "Interview completed", needs_information: "Waiting on applicant",
-  approved: "Approved", declined: "Not approved",
+  approved: "Approved", declined: "Rejected",
 };
 
 function eastAfricaLocalValue(value: string | null) {
@@ -59,7 +59,8 @@ export default async function AdminPage({ searchParams }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = await searchParams;
-  const hasNotice = typeof query.reviewed === "string";
+  const hasNotice = typeof query.reviewed === "string" || typeof query.decided === "string";
+  const decisionSaved = typeof query.decided === "string";
   const interviewScheduled = typeof query.interview === "string";
   const reviewFailed = query.error === "review";
   if (!hasSupabaseConfig()) return <section className="admin-page"><p className="eyebrow eyebrow-dark">DRACARYS / ADMINISTRATION</p><h1>Review trader<br /><em>applications with care.</em></h1><p>Connect Supabase and apply the trader application migration before opening the administration panel.</p></section>;
@@ -91,11 +92,12 @@ export default async function AdminPage({ searchParams }: {
   return <section className="admin-page">
     <header className="admin-page-head"><div><p className="eyebrow eyebrow-dark">DRACARYS / PRIVATE ADMINISTRATION</p><h1>Trader approval<br /><em>desk.</em></h1><p>Review each application against the same process. An approval gives the member a public trader profile and a visible trading record.</p></div><Link href="/profile">Your profile</Link></header>
     <div className="admin-summary"><article><span>OPEN APPLICATIONS</span><strong>{openCount}</strong></article><article><span>APPROVED APPLICATIONS</span><strong>{approvedCount}</strong></article><article><span>APPROVAL STANDARD</span><strong>70 / 100</strong></article></div>
-    {hasNotice && <p className="trader-application-success" role="status">Review saved.</p>}
+    {hasNotice && <p className="trader-application-success" role="status">{decisionSaved ? "Decision saved. The applicant’s account access has been updated." : "Review saved."}</p>}
     {interviewScheduled && <p className="trader-application-success" role="status">Zoom appointment saved. The applicant can see it in their private application page.</p>}
     {reviewFailed && <p className="trader-application-alert" role="alert">The decision could not be saved. Confirm the application is still open, then try again.</p>}
     {query.error === "details" && <p className="trader-application-alert" role="alert">Check the score and review text lengths, then save again.</p>}
     {query.error === "forbidden" && <p className="trader-application-alert" role="alert">Your administrator permission could not be confirmed. Sign out, sign back in and retry.</p>}
+    {query.error === "decision" && <p className="trader-application-alert" role="alert">The final decision could not be saved. Refresh the page and try again.</p>}
     {query.error === "approval" && <p className="trader-application-alert" role="alert">Approval was not completed. Confirm the Zoom interview is marked complete, all three verification checks are selected, and the assessment score is at least 70.</p>}
     {query.error === "interview" && <p className="trader-application-alert" role="alert">The interview could not be scheduled. Enter a future East Africa Time appointment and a valid Zoom meeting link.</p>}
     {error ? <section className="admin-review-card"><h2>Application queue unavailable</h2><p>{applicationLoadMessage(error)}</p><Link href="/admin">Refresh queue</Link></section> : applications.length === 0 ? <section className="admin-review-card admin-empty"><h2>No applications found.</h2><p>Submitted trader applications will appear here. If an applicant saw a success message, confirm they submitted on this production site and refresh the queue.</p><Link href="/admin">Refresh queue</Link></section> : <div className="admin-application-list">{applications.map((application) => {
@@ -117,9 +119,9 @@ export default async function AdminPage({ searchParams }: {
           <div className="admin-review-checks"><label><input type="checkbox" name="identity_verified" defaultChecked={review?.identity_verified} />Identity verified privately</label><label><input type="checkbox" name="background_verified" defaultChecked={review?.background_verified} />Background checked</label><label><input type="checkbox" name="assessment_passed" defaultChecked={review?.assessment_passed} />Assessment passed</label><label>Assessment score<input type="number" name="assessment_score" min="0" max="100" defaultValue={review?.assessment_score ?? ""} /></label></div>
           <label>Update visible to applicant<textarea name="public_message" maxLength={1200} defaultValue={application.public_message ?? ""} placeholder="Share the next step or explain the decision. Keep private verification details out of this message." /></label>
           <label>Private reviewer notes<textarea name="private_notes" maxLength={4000} defaultValue={review?.private_notes ?? ""} placeholder="Administrator-only. Record the basis for this stage and any follow-up required." /></label>
-          <p className="admin-review-rule">Approval requires a completed Zoom interview, private identity and background checks, accepted trader standards, and an assessment score of at least 70. Do not upload or paste identity documents, statements or other sensitive evidence here.</p>
+          <p className="admin-review-rule">Administrators may approve or reject an application directly at any stage. Approval grants feed and setup publishing access; rejection keeps the account at Public Member level. Record the basis for a direct decision in private notes.</p>
           <button className="button button-dark" type="submit">Save review</button>
-          <div className="admin-decision-actions"><span>FINAL DECISION</span><button className="button button-outline admin-reject-button" type="submit" name="decision" value="declined">Reject application</button>{application.interview_completed_at && <button className="button button-dark" type="submit" name="decision" value="approved">Approve trader</button>}</div>
+          <div className="admin-decision-actions"><span>FINAL DECISION</span><button className="button button-outline admin-reject-button" type="submit" name="decision" value="declined" formAction={decideTraderApplication}>Reject application</button><button className="button button-dark" type="submit" name="decision" value="approved" formAction={decideTraderApplication}>Approve trader</button></div>
         </form>}
         {!closed && <form action={scheduleTraderInterview} className="admin-interview-form"><input type="hidden" name="application_id" value={application.id} /><div><p className="eyebrow eyebrow-dark">ADMINISTRATION DEPARTMENT / ZOOM</p><h3>Arrange the interview.</h3><p>Choose an appointment in East Africa Time (UTC+3). Paste the meeting link created in the department’s Zoom account. The applicant will see these details in their private application.</p></div><label>Appointment · EAT<input type="datetime-local" name="interview_at" min={eastAfricaLocalValue(new Date().toISOString())} defaultValue={eastAfricaLocalValue(application.interview_at)} required /></label><label>Zoom meeting link<input type="url" name="zoom_url" defaultValue={application.zoom_url ?? ""} placeholder="https://zoom.us/j/..." maxLength={500} required /></label><label>Message to applicant<textarea name="public_message" maxLength={1200} defaultValue={application.public_message ?? ""} placeholder="Confirm the interview date, time, and any preparation needed." /></label><button className="button button-dark button-small" type="submit">{application.interview_at ? "Reschedule interview" : "Schedule Zoom interview"}</button></form>}
       </article>;

@@ -30,7 +30,7 @@ const statusLabels: Record<string, string> = {
   interview_completed: "Interview completed",
   needs_information: "Waiting for your response",
   approved: "Approved",
-  declined: "Not approved",
+  declined: "Rejected",
 };
 
 const errorMessages: Record<string, string> = {
