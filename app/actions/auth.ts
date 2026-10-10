@@ -136,6 +136,12 @@ export async function signUp(formData: FormData) {
     if (code.includes("rate_limit") || error.status === 429) {
       redirect("/sign-up?error=rate");
     }
+    if (
+      code === "email_address_not_authorized" ||
+      message.includes("email address not authorized")
+    ) {
+      redirect("/sign-up?error=email-delivery");
+    }
     redirect("/sign-up?error=signup");
   }
   if (data.session) redirect("/community");

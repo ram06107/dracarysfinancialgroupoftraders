@@ -12,6 +12,7 @@ const messages: Record<string, string> = {
   details: "Add your name, a valid email and a password of at least 10 characters.",
   password: "Use at least 10 characters, including an uppercase letter, a lowercase letter, a number and a symbol.",
   "email-in-use": "This email may already have an account. Sign in or reset your password instead.",
+  "email-delivery": "We couldn't send a confirmation email to that address. Try again later or contact the DRACARYS team.",
   rate: "Too many signup attempts were made recently. Wait a little before trying again.",
   signup: "We couldn't finish creating your account. Check your details and try again. If it keeps failing, contact the DRACARYS team.",
 };
