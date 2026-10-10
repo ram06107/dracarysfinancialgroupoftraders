@@ -83,15 +83,19 @@ export async function signUp(formData: FormData) {
   const displayName = formValue(formData, "display_name");
   const email = formValue(formData, "email").toLowerCase();
   const password = formData.get("password");
+  if (displayName.length < 2 || displayName.length > 80 || !/^\S+@\S+\.\S+$/.test(email)) {
+    redirect("/sign-up?error=details");
+  }
   if (
-    displayName.length < 2 ||
-    displayName.length > 80 ||
-    !/^\S+@\S+\.\S+$/.test(email) ||
     typeof password !== "string" ||
     password.length < 10 ||
-    password.length > 128
+    password.length > 128 ||
+    !/[a-z]/.test(password) ||
+    !/[A-Z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[^A-Za-z0-9]/.test(password)
   ) {
-    redirect("/sign-up?error=details");
+    redirect("/sign-up?error=password");
   }
 
   const supabase = await createClient();
@@ -105,7 +109,35 @@ export async function signUp(formData: FormData) {
     },
   });
 
-  if (error) redirect("/sign-up?error=signup");
+  if (error) {
+    const code = error.code?.toLowerCase() ?? "";
+    const message = error.message.toLowerCase();
+    const safeMessage = error.message
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted email]")
+      .slice(0, 240);
+    console.error("[auth] signup failed", {
+      code: code || "unknown",
+      status: error.status,
+      name: error.name,
+      message: safeMessage,
+    });
+
+    if (code === "weak_password" || (message.includes("password") && message.includes("weak"))) {
+      redirect("/sign-up?error=password");
+    }
+    if (
+      code === "user_already_exists" ||
+      code === "email_exists" ||
+      message.includes("already registered") ||
+      message.includes("already exists")
+    ) {
+      redirect("/sign-up?error=email-in-use");
+    }
+    if (code.includes("rate_limit") || error.status === 429) {
+      redirect("/sign-up?error=rate");
+    }
+    redirect("/sign-up?error=signup");
+  }
   if (data.session) redirect("/community");
   redirect("/sign-in?notice=check-email");
 }

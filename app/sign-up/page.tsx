@@ -10,7 +10,10 @@ export const metadata: Metadata = { title: "Join free" };
 const messages: Record<string, string> = {
   setup: "Account services are not connected yet. Configure the Supabase settings to enable registration.",
   details: "Add your name, a valid email and a password of at least 10 characters.",
-  signup: "We could not create that account. The email may already be in use, or the service may be unavailable.",
+  password: "Use at least 10 characters, including an uppercase letter, a lowercase letter, a number and a symbol.",
+  "email-in-use": "This email may already have an account. Sign in or reset your password instead.",
+  rate: "Too many signup attempts were made recently. Wait a little before trying again.",
+  signup: "We couldn't finish creating your account. Check your details and try again. If it keeps failing, contact the DRACARYS team.",
 };
 
 export default async function SignUpPage({
@@ -44,8 +47,8 @@ export default async function SignUpPage({
           <input id="display_name" name="display_name" type="text" autoComplete="name" minLength={2} maxLength={80} required />
           <label htmlFor="email">Email</label>
           <input id="email" name="email" type="email" autoComplete="email" required />
-          <label htmlFor="password">Password <span>10 characters minimum</span></label>
-          <input id="password" name="password" type="password" autoComplete="new-password" minLength={10} maxLength={128} required />
+          <label htmlFor="password">Password <span>10+ characters; uppercase, lowercase, number, symbol</span></label>
+          <input id="password" name="password" type="password" autoComplete="new-password" minLength={10} maxLength={128} pattern="(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{10,128}" title="Use at least 10 characters, including an uppercase letter, a lowercase letter, a number and a symbol." required />
           <button className="button button-dark auth-submit" type="submit">Join the community <span aria-hidden="true"></span></button>
         </form>
         </> : <DemoSignInCard />}
